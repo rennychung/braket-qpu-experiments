@@ -1,81 +1,70 @@
 # Amazon Braket QPU Experiments
 
-Quantum hardware experiments performed through Amazon Braket across three quantum-computing platforms:
+Experiments and analysis performed through Amazon Braket on three quantum-computing platforms:
 
 * **QuEra Aquila** — neutral-atom quantum processor
 * **Rigetti Ankaa-3** — superconducting quantum processor
 * **IonQ Forte-1** — trapped-ion quantum processor
 
-The repository contains hardware experiment scripts, measurement data, analysis code, and validation utilities developed while working with these devices.
+The repository contains hardware experiment scripts, retained measurement data, analysis code, and several validation checks used during development.
 
 ## QuEra Aquila
 
-Analog Hamiltonian simulation experiments were implemented using programmable neutral-atom arrays and time-dependent Rabi and detuning schedules.
+The Aquila experiments use programmable neutral-atom arrays with time-dependent Rabi and detuning schedules.
 
-The hardware study includes:
+The retained hardware study includes system-size scaling at **4, 8, 12, and 16 atoms** using a **4.5 µm nearest-neighbor blockade geometry**, together with an independent 4-atom control and 8-atom hold-time runs at **1 µs and 2 µs**. Each hardware run used **500 shots**.
 
-* system-size scaling at **4, 8, 12, and 16 atoms**
-* an independent 4-atom control
-* 8-atom hold-time experiments at **1 μs and 2 μs**
-* **500 shots per hardware run**
-* analysis of Rydberg excitation populations, loading success, multi-excitation probability, and nearest-neighbor correlations
+The analysis extracts Rydberg excitation populations, atom-loading success, multi-excitation probability, and nearest-neighbor correlations from the returned measurements.
 
-Sanitized hardware measurement records and a summary figure are included in `aquila/`.
+<p align="center">
+  <img src="aquila/figures/aquila_final_summary.png" width="750">
+</p>
+
+The underlying hardware records and analysis scripts are in [`aquila/`](aquila/).
 
 ## Rigetti Ankaa-3
 
-Gate-model experiments were implemented on the Ankaa-3 superconducting QPU using six-qubit GHZ circuits with programmable delay sweeps.
-
-The accompanying analysis includes:
-
-* GHZ-state preparation
-* programmable delay experiments
-* measurement retrieval
-* even/odd parity analysis
-* statistical uncertainty estimates
-* normalized-parity and exponential-decay diagnostics
-
-The experiment, retrieval, and analysis scripts are contained in `ankaa3/`.
+The Ankaa-3 experiments use six-qubit GHZ circuits with programmable delays. The code in [`ankaa3/`](ankaa3/) covers hardware submission and retrieval, even/odd parity analysis, statistical uncertainty estimates, and normalized-parity and exponential-decay diagnostics.
 
 ## IonQ Forte-1
 
-Four-qubit experiments were implemented on the Forte-1 trapped-ion QPU, including GHZ and approximate W-state proxy circuits.
-
-The workflow includes circuit construction, Braket hardware submission, measurement retrieval, and parity-visibility analysis.
-
-Code and the retained numerical result summary are contained in `forte1/`.
+The Forte-1 experiments use four-qubit GHZ and approximate W-state proxy circuits. [`forte1/`](forte1/) contains the hardware script and retained numerical results, including the parity-visibility analysis.
 
 ## Validation
 
-The `validation/` directory contains preflight checks used during hardware development, including:
+Several preflight checks used during development are retained in [`validation/`](validation/). These include:
 
-* Aquila hardware-constraint checks
+* Aquila hardware-constraint verification
 * Ankaa-3 supported-operation checks
 * local OpenQASM delay validation
 
-These complement the hardware scripts by documenting part of the validation process used before QPU execution.
+These scripts document part of the validation process used before QPU execution.
 
 ## Repository Structure
 
 ```text
-aquila/       QuEra Aquila experiments, hardware data, and analysis
-ankaa3/       Rigetti Ankaa-3 experiments, retrieval, and analysis
-forte1/       IonQ Forte-1 experiments and results
-validation/   Device and program validation utilities
+aquila/       QuEra Aquila experiments, hardware data, figures, and analysis
+ankaa3/       Rigetti Ankaa-3 experiments, retrieval, and parity analysis
+forte1/       IonQ Forte-1 experiments and retained results
+validation/   Device-capability and program-validation utilities
 ```
 
 ## Setup
 
-Install the required Python packages with:
+Install the Python dependencies with:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Hardware submission requires Amazon Braket access and locally configured AWS credentials. No credentials are included in this repository.
+Submitting new hardware jobs requires Amazon Braket access and locally configured AWS credentials. No credentials are included in this repository.
 
-## Data and Provenance
+## Repository Notes
 
-Hardware-result files included here have been sanitized to remove private Amazon Braket task identifiers and AWS account information while retaining the scientific measurements and relevant experimental metadata.
+The hardware-result files in this public repository have been sanitized to remove private Amazon Braket task identifiers and AWS account information while retaining the scientific measurements and relevant experimental metadata.
 
-`CHANGES.md` records the mapping from the original research files to the public versions and documents the limited changes made for public release.
+The public scripts are cleaned versions of the original research files rather than rewritten implementations. Experiment definitions, circuits, pulse schedules, geometries, shot counts, measurement processing, and numerical analysis were not changed during the public-release cleanup.
+
+Historical internal identifiers are retained in raw records where changing them would alter the archived provenance. [`CHANGES.md`](CHANGES.md) summarizes the limited presentation, privacy, and path-related changes made for public release.
+
+These were exploratory hardware experiments rather than a standardized cross-platform benchmark.
