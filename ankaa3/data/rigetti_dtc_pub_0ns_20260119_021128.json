@@ -1,0 +1,12 @@
+{
+  "experiment": "DTC_publication_rigetti",
+  "timestamp": "2026-01-19T02:11:28.932741",
+  "device": "arn:aws:braket:us-west-1::device/qpu/rigetti/Ankaa-3",
+  "task_id": "redacted:ankaa3-publication-0ns-baseline",
+  "config": {
+    "n_qubits": 6,
+    "hold_ns": 0,
+    "shots": 5000
+  },
+  "status": "submitted"
+}

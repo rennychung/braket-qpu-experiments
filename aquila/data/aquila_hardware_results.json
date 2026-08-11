@@ -1,0 +1,107 @@
+{
+  "batches": [
+    {
+      "type": "Scaling",
+      "n": 4,
+      "spacing": 4.5e-06,
+      "hold": 0.0,
+      "state": "Radius1",
+      "task_id": "redacted:aquila-n4-scaling",
+      "status": "COMPLETED",
+      "metrics": {
+        "mean_n": 0.18840579710144928,
+        "mean_n_per_atom": 0.04710144927536232,
+        "fidelity_1": 0.17391304347826086,
+        "fidelity_all": 0.0,
+        "leakage_0": 0.8198757763975155,
+        "g2_1": 1.1650712250712252
+      }
+    },
+    {
+      "type": "Scaling",
+      "n": 8,
+      "spacing": 4.5e-06,
+      "hold": 0.0,
+      "state": "Radius1",
+      "task_id": "redacted:aquila-n8-scaling",
+      "status": "COMPLETED",
+      "metrics": {
+        "mean_n": 0.31390134529147984,
+        "mean_n_per_atom": 0.03923766816143498,
+        "fidelity_1": 0.25112107623318386,
+        "fidelity_all": 0.0,
+        "leakage_0": 0.7197309417040358,
+        "g2_1": 0.26770708283313327
+      }
+    },
+    {
+      "type": "Scaling",
+      "n": 12,
+      "spacing": 4.5e-06,
+      "hold": 0.0,
+      "state": "Radius1",
+      "task_id": "redacted:aquila-n12-scaling",
+      "status": "COMPLETED",
+      "metrics": {
+        "mean_n": 0.4906976744186046,
+        "mean_n_per_atom": 0.04089147286821705,
+        "fidelity_1": 0.3395348837209302,
+        "fidelity_all": 0.0,
+        "leakage_0": 0.5906976744186047,
+        "g2_1": 0.31077841727107725
+      }
+    },
+    {
+      "type": "Scaling",
+      "n": 16,
+      "spacing": 4.5e-06,
+      "hold": 0.0,
+      "state": "Radius1",
+      "task_id": "redacted:aquila-n16-scaling",
+      "status": "COMPLETED",
+      "metrics": {
+        "mean_n": 0.6979166666666666,
+        "mean_n_per_atom": 0.043619791666666664,
+        "fidelity_1": 0.3177083333333333,
+        "fidelity_all": 0.0,
+        "leakage_0": 0.5078125,
+        "g2_1": 0.40638542285601104
+      }
+    },
+    {
+      "type": "Decay",
+      "n": 8,
+      "spacing": 4.5e-06,
+      "hold": 1.0,
+      "state": "Radius1",
+      "task_id": "redacted:aquila-n8-hold-1us",
+      "status": "COMPLETED",
+      "metrics": {
+        "mean_n": 0.5010989010989011,
+        "mean_n_per_atom": 0.06263736263736264,
+        "fidelity_1": 0.38461538461538464,
+        "fidelity_all": 0.0,
+        "leakage_0": 0.5582417582417583,
+        "g2_1": 0.33600219979296064
+      }
+    },
+    {
+      "type": "Decay",
+      "n": 8,
+      "spacing": 4.5e-06,
+      "hold": 2.0,
+      "state": "Radius1",
+      "task_id": "redacted:aquila-n8-hold-2us",
+      "status": "COMPLETED",
+      "metrics": {
+        "mean_n": 0.4793028322440087,
+        "mean_n_per_atom": 0.05991285403050109,
+        "fidelity_1": 0.355119825708061,
+        "fidelity_all": 0.0,
+        "leakage_0": 0.5882352941176471,
+        "g2_1": 0.3278262886182141
+      }
+    }
+  ],
+  "timestamp": "2026-01-17T13:10:15.998866"
+}
