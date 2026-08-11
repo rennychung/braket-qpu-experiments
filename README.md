@@ -1,68 +1,70 @@
 # Amazon Braket QPU Experiments
 
-Experiments and analysis performed through Amazon Braket on three quantum-computing platforms:
+Hardware experiments run through Amazon Braket on three quantum-computing platforms:
 
-* **QuEra Aquila** — neutral-atom quantum processor
-* **Rigetti Ankaa-3** — superconducting quantum processor
-* **IonQ Forte-1** — trapped-ion quantum processor
+* **QuEra Aquila** — neutral-atom processor
+* **Rigetti Ankaa-3** — superconducting processor
+* **IonQ Forte-1** — trapped-ion processor
 
-The repository contains hardware experiment scripts, retained measurement data, analysis code, and several validation checks used during development.
+This repository contains the experiment scripts, retained hardware measurements, analysis code, and validation checks.
 
 ## QuEra Aquila
 
-The Aquila experiments use programmable neutral-atom arrays with time-dependent Rabi and detuning schedules.
+The Aquila study uses programmable neutral-atom arrays with time-dependent Rabi and detuning schedules.
 
-The retained hardware study includes system-size scaling at **4, 8, 12, and 16 atoms** using a **4.5 µm nearest-neighbor blockade geometry**, together with an independent 4-atom control and 8-atom hold-time runs at **1 µs and 2 µs**. Each hardware run used **500 shots**.
+Hardware runs were performed at **4, 8, 12, and 16 atoms** with a **4.5 µm nearest-neighbor blockade geometry**. Additional runs include an independent 4-atom control and 8-atom hold-time experiments at **1 µs and 2 µs**. Each run used **500 shots**.
 
-The analysis extracts Rydberg excitation populations, atom-loading success, multi-excitation probability, and nearest-neighbor correlations from the returned measurements.
+The analysis includes Rydberg excitation populations, atom-loading success, multi-excitation probability, and nearest-neighbor correlations.
 
 ![QuEra Aquila hardware results](aquila/aquila_final_summary.png)
 
-The underlying hardware records and analysis scripts are in [`aquila/`](aquila/).
+Hardware results and analysis are in [`aquila/`](https://github.com/rennychung/braket-qpu-experiments/blob/main/aquila).
 
 ## Rigetti Ankaa-3
 
-The Ankaa-3 experiments use six-qubit GHZ circuits with programmable delays. The code in [`ankaa3/`](ankaa3/) covers hardware submission and retrieval, even/odd parity analysis, statistical uncertainty estimates, and normalized-parity and exponential-decay diagnostics.
+The Ankaa-3 experiments use six-qubit GHZ circuits with programmable delays.
+
+[`ankaa3/`](https://github.com/rennychung/braket-qpu-experiments/blob/main/ankaa3) contains the hardware submission and retrieval scripts, even/odd parity analysis, statistical uncertainty estimates, and normalized-parity and exponential-decay diagnostics.
 
 ## IonQ Forte-1
 
-The Forte-1 experiments use four-qubit GHZ and approximate W-state proxy circuits. [`forte1/`](forte1/) contains the hardware script and retained numerical results, including the parity-visibility analysis.
+The Forte-1 experiments use four-qubit GHZ and approximate W-state proxy circuits.
+
+[`forte1/`](https://github.com/rennychung/braket-qpu-experiments/blob/main/forte1) contains the hardware script, retained measurements, and parity-visibility analysis.
 
 ## Validation
 
-Several preflight checks used during development are retained in [`validation/`](validation/). These include:
+Preflight checks used before hardware execution are retained in [`validation/`](https://github.com/rennychung/braket-qpu-experiments/blob/main/validation), including:
 
 * Aquila hardware-constraint verification
 * Ankaa-3 supported-operation checks
 * local OpenQASM delay validation
 
-These scripts document part of the validation process used before QPU execution.
-
 ## Repository Structure
 
 ```text
-aquila/       QuEra Aquila experiments, hardware data, figures, and analysis
-ankaa3/       Rigetti Ankaa-3 experiments, retrieval, and parity analysis
-forte1/       IonQ Forte-1 experiments and retained results
-validation/   Device-capability and program-validation utilities
+aquila/       Aquila experiments, hardware data, figures, and analysis
+ankaa3/       Ankaa-3 experiments, retrieval, and parity analysis
+forte1/       Forte-1 experiments and retained results
+validation/   Hardware and program-validation checks
 ```
 
 ## Setup
 
-Install the Python dependencies with:
+Install the required Python packages with:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Submitting new hardware jobs requires Amazon Braket access and locally configured AWS credentials. No credentials are included in this repository.
+Submitting new hardware jobs requires Amazon Braket access and locally configured AWS credentials. No credentials are included in the repository.
 
-## Repository Notes
+## Notes
 
-The hardware-result files in this public repository have been sanitized to remove private Amazon Braket task identifiers and AWS account information while retaining the scientific measurements and relevant experimental metadata.
+Public hardware-result files have been sanitized to remove private Amazon Braket task identifiers and AWS account information while preserving the measurements and experimental metadata used in the analysis.
 
-The public scripts are cleaned versions of the original research files rather than rewritten implementations. Experiment definitions, circuits, pulse schedules, geometries, shot counts, measurement processing, and numerical analysis were not changed during the public-release cleanup.
+The public scripts are cleaned versions of the original experiment files. The experiment definitions, circuits, pulse schedules, geometries, shot counts, measurement processing, and numerical analysis were not changed.
 
-Historical internal identifiers are retained in raw records where changing them would alter the archived provenance. [`CHANGES.md`](CHANGES.md) summarizes the limited presentation, privacy, and path-related changes made for public release.
+Historical internal identifiers remain in archived records where changing them would alter the original provenance. [`CHANGES.md`](https://github.com/rennychung/braket-qpu-experiments/blob/main/CHANGES.md) records the presentation, privacy, and path changes made for the public repository.
 
-These were exploratory hardware experiments rather than a standardized cross-platform benchmark.
+These experiments were exploratory hardware studies, not a standardized cross-platform benchmark.
