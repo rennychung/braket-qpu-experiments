@@ -16,9 +16,7 @@ The retained hardware study includes system-size scaling at **4, 8, 12, and 16 a
 
 The analysis extracts Rydberg excitation populations, atom-loading success, multi-excitation probability, and nearest-neighbor correlations from the returned measurements.
 
-<p align="center">
-  <img src="aquila/figures/aquila_final_summary.png" width="750">
-</p>
+![QuEra Aquila hardware results](aquila/figures/aquila_final_summary.png)
 
 The underlying hardware records and analysis scripts are in [`aquila/`](aquila/).
 
