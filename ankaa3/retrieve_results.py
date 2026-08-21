@@ -1,7 +1,4 @@
-"""
-Rigetti Ankaa-3 - Results Retrieval Script
-Fetches completed quantum tasks and saves raw results
-"""
+"""Retrieve completed Ankaa-3 tasks and save their measurement results."""
 from braket.aws import AwsDevice
 from braket.aws.aws_quantum_task import AwsQuantumTask
 import json
@@ -15,13 +12,7 @@ OUTPUT_DIR = Path(os.environ.get(
 ))
 
 def retrieve_results(metadata_file):
-    """
-    Retrieve results from submitted tasks
-    
-    Args:
-        metadata_file: JSON file from submission script
-    """
-    # Load task metadata
+    """Retrieve the tasks listed in a submission metadata file."""
     with open(metadata_file, 'r') as f:
         metadata = json.load(f)
     
@@ -42,20 +33,16 @@ def retrieve_results(metadata_file):
         print(f"Retrieving: {hold_us:.1f} μs hold")
         
         try:
-            # Fetch task
             task = AwsQuantumTask(arn=task_id)
-            
-            # Check status
+
             status = task.state()
             print(f"  Status: {status}")
             
             if status == "COMPLETED":
-                # Get results
                 result = task.result()
                 measurements = result.measurements
                 measurement_counts = result.measurement_counts
                 
-                # Extract bitstrings and counts
                 bitstring_counts = {}
                 for bitstring, count in measurement_counts.items():
                     bitstring_counts[bitstring] = int(count)
@@ -103,7 +90,6 @@ def retrieve_results(metadata_file):
                 "error": str(e)
             })
     
-    # Save results
     output = {
         "experiment": metadata['experiment'],
         "submission_time": metadata['timestamp'],
@@ -121,7 +107,6 @@ def retrieve_results(metadata_file):
     print(f"\n{'='*60}")
     print(f"✓ Saved: {output_file}")
     
-    # Summary
     completed = sum(1 for r in results if r['status'] == 'completed')
     failed = sum(1 for r in results if r['status'] == 'failed')
     running = sum(1 for r in results if r['status'] not in ['completed', 'failed', 'error'])

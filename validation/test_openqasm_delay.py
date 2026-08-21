@@ -3,7 +3,6 @@
 
 from braket.devices import LocalSimulator
 
-# Define the OpenQASM 3.0 six-qubit GHZ-plus-delay program.
 qasm_str = """
 OPENQASM 3.0;
 include "stdgates.inc";

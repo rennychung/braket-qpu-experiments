@@ -4,8 +4,6 @@ import numpy as np
 import os
 from pathlib import Path
 
-# Load the public, Aquila-only summary relative to this script. Override either
-# directory with AQUILA_DATA_DIR or AQUILA_FIGURES_DIR when needed.
 REPO_DIR = Path(__file__).resolve().parent
 DATA_DIR = Path(os.environ.get("AQUILA_DATA_DIR", REPO_DIR / "data"))
 FIGURES_DIR = Path(os.environ.get("AQUILA_FIGURES_DIR", REPO_DIR / "figures"))
@@ -14,11 +12,8 @@ summary_path = DATA_DIR / "aquila_plot_summary.json"
 with open(summary_path, 'r') as f:
     data = json.load(f)
 
-# Filter for Aquila (exclude IonQ)
 aquila_data = [d for d in data if d['type'] != 'IonQ Benchmark']
 
-# 1. Figure 1: N=4 blockade/control contrast
-# ------------------------------------------
 plt.figure(figsize=(8, 6))
 r1_n4 = [d['mean_n'] for d in aquila_data if d['type'] == 'Radius1' and d['n'] == 4 and d['hold'] == 0][0]
 ctrl_n4 = [d['mean_n'] for d in aquila_data if d['type'] == 'Control' and d['n'] == 4][0]
@@ -32,7 +27,6 @@ plt.ylabel('Total Rydberg Excitations <N>')
 plt.title('Blockade/control contrast (N=4)')
 plt.grid(axis='y', linestyle='--', alpha=0.7)
 
-# Add value labels
 for bar in bars:
     yval = bar.get_height()
     plt.text(bar.get_x() + bar.get_width()/2, yval + 0.05, f'{yval:.3f}', ha='center', va='bottom', fontweight='bold')
@@ -41,8 +35,6 @@ plt.tight_layout()
 plt.savefig(FIGURES_DIR / "fig1_blockade_control_contrast.png", dpi=300)
 plt.close()
 
-# 2. Figure 2: Scale Invariance (N=4 to 16)
-# ------------------------------------------
 plt.figure(figsize=(8, 6))
 scaling_data = sorted([d for d in aquila_data if d['type'] == 'Radius1' and d['hold'] == 0], key=lambda x: x['n'])
 ns = [d['n'] for d in scaling_data]
@@ -54,7 +46,7 @@ plt.axhline(y=np.mean(densities), color='gray', linestyle='--', alpha=0.5, label
 plt.xlabel('Number of Atoms (N)')
 plt.ylabel('Excitation Density <n>/N')
 plt.title('Excitation density across atom counts: N=4 to 16')
-plt.ylim(0, 0.1) # Highlight stability at low density
+plt.ylim(0, 0.1)
 plt.xticks(ns)
 plt.grid(True, linestyle=':', alpha=0.6)
 plt.legend()
@@ -63,8 +55,6 @@ plt.tight_layout()
 plt.savefig(FIGURES_DIR / "fig2_scale_invariance.png", dpi=300)
 plt.close()
 
-# 3. Figure 3: Correlation Suppression (g2)
-# ------------------------------------------
 plt.figure(figsize=(8, 6))
 g2_vals = [d['g2_1'] for d in scaling_data]
 
@@ -81,8 +71,6 @@ plt.tight_layout()
 plt.savefig(FIGURES_DIR / "fig3_blockade_correlation.png", dpi=300)
 plt.close()
 
-# 4. Figure 4: Temporal Decay (N=8)
-# ----------------------------------
 plt.figure(figsize=(8, 6))
 decay_data = sorted([d for d in aquila_data if d['type'] == 'Radius1' and d['n'] == 8], key=lambda x: x['hold'])
 holds = [d['hold'] for d in decay_data]
@@ -98,4 +86,4 @@ plt.tight_layout()
 plt.savefig(FIGURES_DIR / "fig4_temporal_decay.png", dpi=300)
 plt.close()
 
-print("All figures generated successfully.")
+print(f"Figures written to {FIGURES_DIR}")

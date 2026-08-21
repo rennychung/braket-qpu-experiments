@@ -1,7 +1,4 @@
-"""
- Rigetti Ankaa-3 - Normalized-Parity Analysis
-Analyzes parity coherence and reports normalized-parity crossings
-"""
+"""Analyze Ankaa-3 parity measurements and fit an exponential reference curve."""
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,15 +7,7 @@ from scipy.stats import sem
 from pathlib import Path
 
 def compute_parity(measurement_counts, n_qubits):
-    """
-    Compute parity observable from measurement counts
-    
-    Parity = (P_even - P_odd) / (P_even + P_odd)
-    
-    For GHZ state:
-    - Perfect coherence: Parity ≈ 0.7-0.8 (all even or all odd)
-    - No coherence: Parity ≈ 0 (random 50/50 mix)
-    """
+    """Return the even/odd parity observable and its binomial error."""
     even_count = 0
     odd_count = 0
     
@@ -31,10 +20,8 @@ def compute_parity(measurement_counts, n_qubits):
     
     total = even_count + odd_count
     
-    # Parity observable
     parity = (even_count - odd_count) / total
-    
-    # Statistical error (binomial)
+
     p_even = even_count / total
     error = np.sqrt(p_even * (1 - p_even) / total)
     
@@ -53,10 +40,7 @@ def exp_decay(t, P0, gamma):
     return P0 * np.exp(-gamma * t)
 
 def analyze_results(results_file):
-    """
-    Main analysis pipeline
-    """
-    # Load results
+    """Analyze completed measurements in a retrieval-results JSON file."""
     with open(results_file, 'r') as f:
         data = json.load(f)
     
@@ -66,7 +50,6 @@ def analyze_results(results_file):
     print(f"Experiment: {data['experiment']}")
     print(f"Qubits: {data['config']['n_qubits']}")
     
-    # Extract completed results
     results = [r for r in data['results'] if r['status'] == 'completed']
     
     if not results:
@@ -75,7 +58,6 @@ def analyze_results(results_file):
     
     print(f"Completed tasks: {len(results)}")
     
-    # Compute parity for each time point
     analysis = []
     
     for r in results:
@@ -98,14 +80,12 @@ def analyze_results(results_file):
         print(f"  P(even): {parity_data['p_even']:.4f}")
         print(f"  Counts: {parity_data['even_count']} even, {parity_data['odd_count']} odd")
     
-    # Sort by time
     analysis = sorted(analysis, key=lambda x: x['hold_us'])
     
     times = np.array([a['hold_us'] for a in analysis])
     parities = np.array([a['parity'] for a in analysis])
     errors = np.array([a['error'] for a in analysis])
     
-    # Normalize to baseline (t=0)
     P0 = parities[0]
     normalized_parity = np.abs(parities) / np.abs(P0)
     normalized_errors = errors / np.abs(P0)
@@ -117,13 +97,12 @@ def analyze_results(results_file):
     for t, p, e in zip(times, normalized_parity, normalized_errors):
         print(f"{t:6.2f} μs: {p:.4f} ± {e:.4f}")
     
-    # Fit exponential decay as a reference model.
     try:
         popt, pcov = curve_fit(
             exp_decay, 
             times, 
             np.abs(parities),
-            p0=[P0, 0.15],  # Initial guess: P0, gamma
+            p0=[P0, 0.15],
             sigma=errors,
             absolute_sigma=True
         )
@@ -139,7 +118,6 @@ def analyze_results(results_file):
         print(f"γ = {gamma_fit:.4f} ± {gamma_err:.4f} μs⁻¹")
         print(f"T2* = 1/γ = {1/gamma_fit:.2f} μs")
         
-        # Predicted time to 0.95
         t_95_pred = -np.log(0.95) / gamma_fit
         print(f"\nPredicted time to 0.95: {t_95_pred:.3f} μs")
         
@@ -148,16 +126,13 @@ def analyze_results(results_file):
         P0_fit, gamma_fit = None, None
         t_95_pred = None
     
-    # Report normalized-parity crossings as a diagnostic.
     print("\n" + "="*60)
-    print("0.95 CROSSING DIAGNOSTIC")
+    print("0.95 CROSSING")
     print("="*60)
     
-    # Find where normalized parity crosses 0.95
     crossing_times = []
     for i in range(len(times) - 1):
         if normalized_parity[i] > 0.95 and normalized_parity[i+1] < 0.95:
-            # Linear interpolation
             t1, p1 = times[i], normalized_parity[i]
             t2, p2 = times[i+1], normalized_parity[i+1]
             t_cross = t1 + (0.95 - p1) * (t2 - t1) / (p2 - p1)
@@ -169,24 +144,22 @@ def analyze_results(results_file):
         
         if t_95_pred is not None:
             deviation = abs(t_95_obs - t_95_pred) / t_95_pred * 100
-            print(f"  QM prediction: {t_95_pred:.3f} μs")
+            print(f"  Fit prediction: {t_95_pred:.3f} μs")
             print(f"  Deviation: {deviation:.1f}%")
             
             if deviation > 20:
                 print("\nLarge deviation from the fitted exponential")
-                print("  Crossing differs materially from the fitted curve; interpret as a diagnostic")
+                print("  Observed crossing differs from the fitted curve")
             else:
                 print("\n✓ Consistent with smooth exponential decay")
-                print("  No clear 0.95 crossing in the sampled range")
+                print("  Observed crossing is consistent with the fitted curve")
     else:
         print("✗ No crossing found in sampled range")
         print("  Need more time points or different spacing")
     
-    # Plot results
-    plot_analysis(times, parities, errors, normalized_parity, 
+    plot_analysis(times, parities, errors, normalized_parity,
                   normalized_errors, P0_fit, gamma_fit, analysis)
     
-    # Save analysis
     output = {
         "experiment": data['experiment'],
         "config": data['config'],
@@ -216,12 +189,9 @@ def analyze_results(results_file):
 
 def plot_analysis(times, parities, errors, normalized_parity, 
                   normalized_errors, P0_fit, gamma_fit, analysis):
-    """
-    Generate diagnostic plots
-    """
+    """Plot parity, normalization, fit residuals, and outcome probabilities."""
     fig, axes = plt.subplots(2, 2, figsize=(12, 10))
     
-    # Plot 1: Raw parity vs time
     ax = axes[0, 0]
     ax.errorbar(times, np.abs(parities), yerr=errors, 
                 fmt='o', ms=8, capsize=5, label='Measured')
@@ -237,7 +207,6 @@ def plot_analysis(times, parities, errors, normalized_parity,
     ax.grid(alpha=0.3)
     ax.legend()
     
-    # Plot 2: Normalized coherence
     ax = axes[0, 1]
     ax.errorbar(times, normalized_parity, yerr=normalized_errors,
                 fmt='o', ms=8, capsize=5, label='Normalized |P|/|P₀|')
@@ -251,7 +220,6 @@ def plot_analysis(times, parities, errors, normalized_parity,
     ax.grid(alpha=0.3)
     ax.legend()
     
-    # Plot 3: Residuals from exponential fit
     ax = axes[1, 0]
     if gamma_fit is not None:
         residuals = np.abs(parities) - exp_decay(times, P0_fit, gamma_fit)
@@ -262,7 +230,6 @@ def plot_analysis(times, parities, errors, normalized_parity,
         ax.set_title('Fit Residuals', fontsize=14, fontweight='bold')
         ax.grid(alpha=0.3)
     
-    # Plot 4: Even/Odd probabilities
     ax = axes[1, 1]
     p_even = [a['p_even'] for a in analysis]
     p_odd = [a['p_odd'] for a in analysis]

@@ -24,7 +24,7 @@ Hardware results and analysis are in [`aquila/`](https://github.com/rennychung/b
 
 The Ankaa-3 experiments use six-qubit GHZ circuits with programmable delays.
 
-[`ankaa3/`](https://github.com/rennychung/braket-qpu-experiments/blob/main/ankaa3) contains the hardware submission and retrieval scripts, even/odd parity analysis, statistical uncertainty estimates, and normalized-parity and exponential-decay diagnostics.
+[`ankaa3/`](https://github.com/rennychung/braket-qpu-experiments/blob/main/ankaa3) contains the hardware submission and retrieval scripts, even/odd parity analysis, statistical uncertainty estimates, and normalized-parity and exponential-decay fits.
 
 ## IonQ Forte-1
 
