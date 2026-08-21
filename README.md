@@ -61,8 +61,6 @@ Submitting new hardware jobs requires Amazon Braket access and locally configure
 
 ## Notes
 
-Public hardware-result files have been sanitized to remove private Amazon Braket task identifiers and AWS account information while preserving the measurements and experimental metadata used in the analysis.
-
 The public scripts are cleaned versions of the original experiment files. The experiment definitions, circuits, pulse schedules, geometries, shot counts, measurement processing, and numerical analysis were not changed.
 
 Historical internal identifiers remain in archived records where changing them would alter the original provenance. [`CHANGES.md`](https://github.com/rennychung/braket-qpu-experiments/blob/main/CHANGES.md) records the presentation, privacy, and path changes made for the public repository.
