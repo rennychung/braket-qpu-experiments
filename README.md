@@ -57,7 +57,7 @@ Install the required Python packages with:
 pip install -r requirements.txt
 ```
 
-Submitting new hardware jobs requires Amazon Braket access and locally configured AWS credentials. No credentials are included in the repository.
+Submitting new hardware jobs requires Amazon Braket access and locally configured AWS credentials.
 
 ## Notes
 
