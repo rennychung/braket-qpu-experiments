@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import json
+from matplotlib.lines import Line2D
 from datetime import datetime
 import os
 from pathlib import Path
@@ -32,6 +33,27 @@ SPACING_CONTROL = 18.0e-6
 PREP_DURATION_US = 4.0
 OMEGA_MAX = 2.5e6 * 2 * np.pi
 DELTA_START = -10e6 * 2 * np.pi
+
+
+def wilson_interval(successes, trials, z=1.96):
+    """Wilson 95% interval for a binomial proportion."""
+    if trials == 0:
+        return (np.nan, np.nan)
+    p = successes / trials
+    denom = 1.0 + z**2 / trials
+    centre = (p + z**2 / (2.0 * trials)) / denom
+    radius = z * np.sqrt(p * (1.0 - p) / trials + z**2 / (4.0 * trials**2)) / denom
+    return (max(0.0, centre - radius), min(1.0, centre + radius))
+
+
+def mean_ci(values, scale=1.0, z=1.96):
+    """Normal-approximation 95% CI for a shot-level mean."""
+    values = np.asarray(values, dtype=float) / scale
+    if len(values) < 2:
+        return (np.nan, np.nan)
+    half_width = z * np.std(values, ddof=1) / np.sqrt(len(values))
+    mean = np.mean(values)
+    return (mean - half_width, mean + half_width)
 
 def build_w_state_with_hold(hold_us=0.0):
     """
@@ -113,12 +135,18 @@ def analyze_shots(measurements, n, state_type):
     n_exc = np.sum(ryd, axis=1)
     
     metrics = {
+        'n_valid': n_shots,
         'mean_n': np.mean(n_exc),
         'mean_n_per_atom': np.mean(n_exc) / n,
         'fidelity_1': np.sum(n_exc == 1) / n_shots,
         'fidelity_all': np.sum(n_exc == n) / n_shots,
         'leakage_0': np.sum(n_exc == 0) / n_shots
     }
+
+    metrics['mean_n_ci'] = mean_ci(n_exc)
+    metrics['mean_n_per_atom_ci'] = mean_ci(n_exc, scale=n)
+    p1_low, p1_high = wilson_interval(int(np.sum(n_exc == 1)), n_shots)
+    metrics['fidelity_1_ci'] = [p1_low, p1_high]
     
     dens = np.mean(ryd, axis=0)
     corr = (ryd.T @ ryd) / n_shots
@@ -215,25 +243,69 @@ def run_experiment():
 
 def plot_results(tasks):
     try:
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+        plt.rcParams.update({
+            'font.family': 'DejaVu Sans',
+            'font.size': 9,
+            'axes.labelsize': 10,
+            'axes.titlesize': 10,
+            'xtick.labelsize': 8.5,
+            'ytick.labelsize': 8.5,
+            'legend.fontsize': 8,
+            'lines.linewidth': 1.5,
+        })
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(6.8, 3.35))
+
+        for ax in (ax1, ax2):
+            ax.grid(False)
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.tick_params(direction='out', length=3, width=0.8)
         
         scale_tasks = [t for t in tasks if t['type']=='Scaling' and t['status']=='COMPLETED']
         if scale_tasks:
             ns = [t['n'] for t in scale_tasks]
             ys = [t['metrics']['mean_n_per_atom'] for t in scale_tasks]
-            ax1.plot(ns, ys, 'o-', label='Radius-1')
+            yerr = [
+                [y - t['metrics']['mean_n_per_atom_ci'][0] for y, t in zip(ys, scale_tasks)],
+                [t['metrics']['mean_n_per_atom_ci'][1] - y for y, t in zip(ys, scale_tasks)],
+            ]
+            ax1.errorbar(
+                ns, ys, yerr=yerr, fmt='o-', color='#2166ac',
+                markerfacecolor='white', markeredgewidth=1.2,
+                capsize=3,
+            )
             
-            ax1.plot(ns, [1/x for x in ns], 'k:', label='1/N', alpha=0.5)
+            ax1.plot(ns, [1/x for x in ns], color='#555555', linestyle=(0, (1, 2)),
+                     label='_nolegend_', alpha=0.9)
 
             ctrl = [t for t in tasks if t['type']=='Control' and t['status']=='COMPLETED']
             if ctrl:
-                ax1.plot([ctrl[0]['n']], [ctrl[0]['metrics']['mean_n_per_atom']], 'rx', label='Control (N=4)', markersize=10)
+                ctrl_task = ctrl[0]
+                ctrl_metric = ctrl_task['metrics']
+                ctrl_ci = ctrl_metric.get('mean_n_per_atom_ci')
+                ctrl_yerr = None if ctrl_ci is None else [[ctrl_metric['mean_n_per_atom'] - ctrl_ci[0]], [ctrl_ci[1] - ctrl_metric['mean_n_per_atom']]]
+                ax1.errorbar(
+                    [ctrl_task['n']], [ctrl_metric['mean_n_per_atom']], yerr=ctrl_yerr,
+                    fmt='s', color='#b2182b', markerfacecolor='white',
+                    markeredgewidth=1.2, capsize=3,
+                )
                 
-            ax1.set_title('Scaling (Hardware N<=16)')
-            ax1.set_xlabel('N')
-            ax1.set_ylabel('Mean Excitation / Atom')
-            ax1.legend()
-            ax1.grid(True, alpha=0.3)
+            ax1.set_title('Atom-number scaling')
+            ax1.set_xlabel('Atom number, $N$')
+            ax1.set_ylabel('$\\langle n\\rangle/N$')
+            legend_handles = [
+                Line2D([], [], color='#2166ac', marker='o', markerfacecolor='white',
+                       markeredgewidth=1.2, linewidth=1.5, label='4.5 µm spacing'),
+                Line2D([], [], color='#555555', linestyle=(0, (1, 2)), linewidth=1.5,
+                       label='$1/N$ reference'),
+            ]
+            if ctrl:
+                legend_handles.append(
+                    Line2D([], [], color='#b2182b', marker='s', markerfacecolor='white',
+                           markeredgewidth=1.2, linewidth=0, label='18 µm control spacing')
+                )
+            ax1.legend(handles=legend_handles)
+            ax1.set_xticks(ns)
             
         decay_tasks = [t for t in tasks if (t['type']=='Decay' or (t['type']=='Scaling' and t['n']==8)) and t['status']=='COMPLETED']
         if decay_tasks:
@@ -241,16 +313,29 @@ def plot_results(tasks):
             ts = [t['hold'] for t in decay_tasks]
             ps = [t['metrics']['fidelity_1'] for t in decay_tasks]
             
-            ax2.plot(ts, ps, 's-', color='green', label='W-state P(1)')
-            ax2.set_title('Decay at N=8')
-            ax2.set_xlabel('Hold Time (us)')
-            ax2.set_ylabel('Probability P(1)')
+            ci_low = [d['metrics']['fidelity_1_ci'][0] for d in decay_tasks]
+            ci_high = [d['metrics']['fidelity_1_ci'][1] for d in decay_tasks]
+            ax2.errorbar(
+                ts, ps,
+                yerr=[[p - lo for p, lo in zip(ps, ci_low)], [hi - p for p, hi in zip(ps, ci_high)]],
+                fmt='s-', color='#238b45', markerfacecolor='white',
+                markeredgewidth=1.2, capsize=3,
+            )
+            ax2.set_title('$N = 8$ hold-time dependence')
+            ax2.set_xlabel('Hold time ($\\mu$s)')
+            ax2.set_ylabel('$P(n=1)$')
             ax2.set_ylim(bottom=0)
-            ax2.grid(True, alpha=0.3)
-            
-        plt.tight_layout()
+            ax2.set_xticks(ts)
+        
+        fig.text(0.5, 0.01, 'Error bars: 95% confidence intervals; n = conditioned shots.',
+                 ha='center', va='bottom', fontsize=7.5, color='#444444')
+        fig.tight_layout(rect=(0, 0.06, 1, 1), pad=0.8)
         FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-        plt.savefig(FIGURES_DIR / 'aquila_final_summary.png')
+        for extension in ('png', 'pdf', 'svg'):
+            fig.savefig(FIGURES_DIR / f'aquila_final_summary.{extension}',
+                        dpi=600 if extension == 'png' else None,
+                        bbox_inches='tight')
+        plt.close(fig)
         print("Saved summary plot.")
     except Exception as e:
         print(f"Plotting failed: {e}")
