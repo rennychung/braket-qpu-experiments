@@ -131,25 +131,27 @@ def analyze_shots(measurements, n, state_type):
     if not valid: return {'valid': 0, 'mean_n_per_atom': 0}
     
     ryd = 1 - np.array([s.post_sequence for s in valid])
-    n_shots = len(ryd)
+    m_valid = len(ryd)
     n_exc = np.sum(ryd, axis=1)
     
     metrics = {
-        'n_valid': n_shots,
+        'm_valid': m_valid,
+        'm_submitted': SHOTS,
+        'loading_rate': m_valid / SHOTS,
         'mean_n': np.mean(n_exc),
         'mean_n_per_atom': np.mean(n_exc) / n,
-        'fidelity_1': np.sum(n_exc == 1) / n_shots,
-        'fidelity_all': np.sum(n_exc == n) / n_shots,
-        'leakage_0': np.sum(n_exc == 0) / n_shots
+        'p_exactly_one': np.sum(n_exc == 1) / m_valid,
+        'fidelity_all': np.sum(n_exc == n) / m_valid,
+        'leakage_0': np.sum(n_exc == 0) / m_valid
     }
 
     metrics['mean_n_ci'] = mean_ci(n_exc)
     metrics['mean_n_per_atom_ci'] = mean_ci(n_exc, scale=n)
-    p1_low, p1_high = wilson_interval(int(np.sum(n_exc == 1)), n_shots)
-    metrics['fidelity_1_ci'] = [p1_low, p1_high]
+    p1_low, p1_high = wilson_interval(int(np.sum(n_exc == 1)), m_valid)
+    metrics['p_exactly_one_ci'] = [p1_low, p1_high]
     
     dens = np.mean(ryd, axis=0)
-    corr = (ryd.T @ ryd) / n_shots
+    corr = (ryd.T @ ryd) / m_valid
     
     g2_sum = 0
     g2_count = 0
@@ -311,10 +313,10 @@ def plot_results(tasks):
         if decay_tasks:
             decay_tasks.sort(key=lambda x: x['hold'])
             ts = [t['hold'] for t in decay_tasks]
-            ps = [t['metrics']['fidelity_1'] for t in decay_tasks]
+            ps = [t['metrics']['p_exactly_one'] for t in decay_tasks]
             
-            ci_low = [d['metrics']['fidelity_1_ci'][0] for d in decay_tasks]
-            ci_high = [d['metrics']['fidelity_1_ci'][1] for d in decay_tasks]
+            ci_low = [d['metrics']['p_exactly_one_ci'][0] for d in decay_tasks]
+            ci_high = [d['metrics']['p_exactly_one_ci'][1] for d in decay_tasks]
             ax2.errorbar(
                 ts, ps,
                 yerr=[[p - lo for p, lo in zip(ps, ci_low)], [hi - p for p, hi in zip(ps, ci_high)]],
@@ -327,7 +329,7 @@ def plot_results(tasks):
             ax2.set_ylim(bottom=0)
             ax2.set_xticks(ts)
         
-        fig.text(0.5, 0.01, 'Error bars: 95% confidence intervals; n = conditioned shots.',
+        fig.text(0.5, 0.01, '95% CIs: Wilson for P(n=1), normal approximation for means. M_valid = shots retained after loading.',
                  ha='center', va='bottom', fontsize=7.5, color='#444444')
         fig.tight_layout(rect=(0, 0.06, 1, 1), pad=0.8)
         FIGURES_DIR.mkdir(parents=True, exist_ok=True)

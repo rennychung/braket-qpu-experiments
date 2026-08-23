@@ -56,7 +56,8 @@ def load_conditioned_rydberg(path, n):
         post = measurement["shotResult"]["postSequence"]
         if sum(pre) == n:
             conditioned.append(1 - np.asarray(post, dtype=int))
-    return np.asarray(conditioned, dtype=int)
+    submitted = int(payload.get("taskMetadata", {}).get("shots", len(payload["measurements"])))
+    return np.asarray(conditioned, dtype=int), submitted
 
 
 def g2_stat(rydberg):
@@ -86,9 +87,9 @@ def bootstrap_g2_interval(rydberg, seed=20260823, samples=1000):
 
 
 def analyze_run(kind, n, hold, state, filename):
-    rydberg = load_conditioned_rydberg(DATA_DIR / filename, n)
+    rydberg, m_submitted = load_conditioned_rydberg(DATA_DIR / filename, n)
     excitations = np.sum(rydberg, axis=1)
-    n_valid = len(excitations)
+    m_valid = len(excitations)
     p1 = float(np.mean(excitations == 1))
     density = float(np.mean(excitations) / n)
     return {
@@ -97,13 +98,15 @@ def analyze_run(kind, n, hold, state, filename):
         "spacing": 18.0 if state == "Control" else 4.5,
         "hold": hold,
         "state": state,
-        "n_shots": n_valid,
+        "m_valid": m_valid,
+        "m_submitted": m_submitted,
+        "loading_rate": m_valid / m_submitted,
         "mean_n": float(np.mean(excitations)),
         "mean_n_ci": mean_interval(excitations),
         "mean_n_per_atom": density,
         "mean_n_per_atom_ci": mean_interval(excitations, scale=n),
-        "fidelity_1": p1,
-        "fidelity_1_ci": wilson_interval(int(np.sum(excitations == 1)), n_valid),
+        "p_exactly_one": p1,
+        "p_exactly_one_ci": wilson_interval(int(np.sum(excitations == 1)), m_valid),
         "fidelity_all": float(np.mean(excitations == n)),
         "g2_1": g2_stat(rydberg),
         "g2_1_ci": bootstrap_g2_interval(rydberg),
@@ -133,7 +136,12 @@ def clean_axes(*axes):
         ax.tick_params(direction="out", length=3, width=0.8)
 
 
-def save_figure(fig, stem, note="Error bars: 95% confidence intervals; n = conditioned shots."):
+def save_figure(
+    fig,
+    stem,
+    note=("95% CIs: Wilson for P(n=1), normal approximation for means, "
+          "bootstrap for g₂(1). M_valid = shots retained after loading."),
+):
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     fig.text(0.5, 0.01, note, ha="center", va="bottom", fontsize=7.5, color="#444444")
     fig.tight_layout(rect=(0, 0.06, 1, 1), pad=0.8)
@@ -158,7 +166,7 @@ def plot_summary(runs):
     decay = sorted([r for r in runs if r["n"] == 8 and r["type"] in {"Scaling", "Decay"}], key=lambda r: r["hold"])
     ns = [r["n"] for r in scaling]
     densities = [r["mean_n_per_atom"] for r in scaling]
-    probabilities = [r["fidelity_1"] for r in decay]
+    probabilities = [r["p_exactly_one"] for r in decay]
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(6.8, 3.35))
     clean_axes(ax1, ax2)
@@ -183,7 +191,7 @@ def plot_summary(runs):
 
     ax2.errorbar(
         [r["hold"] for r in decay], probabilities,
-        yerr=asymmetric_errors(probabilities, [r["fidelity_1_ci"] for r in decay]),
+        yerr=asymmetric_errors(probabilities, [r["p_exactly_one_ci"] for r in decay]),
         fmt="s-", color="#238b45", markerfacecolor="white", markeredgewidth=1.2,
         capsize=3,
     )
@@ -255,9 +263,9 @@ def plot_individual_figures(runs):
     fig, ax = plt.subplots(figsize=(3.45, 3.1))
     clean_axes(ax)
     holds = [r["hold"] for r in decay]
-    probabilities = [r["fidelity_1"] for r in decay]
+    probabilities = [r["p_exactly_one"] for r in decay]
     ax.errorbar(holds, probabilities,
-                yerr=asymmetric_errors(probabilities, [r["fidelity_1_ci"] for r in decay]),
+                yerr=asymmetric_errors(probabilities, [r["p_exactly_one_ci"] for r in decay]),
                 fmt="s-", color="#238b45", markerfacecolor="white", markeredgewidth=1.2,
                 capsize=3)
     ax.set_xlabel("Hold time ($\\mu$s)")
