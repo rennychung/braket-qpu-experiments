@@ -1,6 +1,4 @@
 """Retrieve completed Ankaa-3 tasks and save their measurement results."""
-from braket.aws import AwsDevice
-from braket.aws.aws_quantum_task import AwsQuantumTask
 import json
 import os
 from datetime import datetime
@@ -13,6 +11,11 @@ OUTPUT_DIR = Path(os.environ.get(
 
 def retrieve_results(metadata_file):
     """Retrieve the tasks listed in a submission metadata file."""
+    try:
+        from braket.aws.aws_quantum_task import AwsQuantumTask
+    except Exception as exc:
+        raise RuntimeError(f"Amazon Braket SDK unavailable: {exc}") from exc
+
     with open(metadata_file, 'r') as f:
         metadata = json.load(f)
     
@@ -21,13 +24,24 @@ def retrieve_results(metadata_file):
     print("="*60)
     print(f"Experiment: {metadata['experiment']}")
     print(f"Submitted: {metadata['timestamp']}")
-    print(f"Tasks: {len(metadata['tasks'])}")
+    task_infos = metadata.get("tasks")
+    if task_infos is None and metadata.get("task_id"):
+        # Backward compatibility for the original single-task metadata format.
+        task_infos = [{
+            "task_id": metadata["task_id"],
+            "hold_ns": metadata.get("config", {}).get("hold_ns", 0),
+            "hold_us": metadata.get("config", {}).get("hold_ns", 0) / 1000.0,
+        }]
+    if not task_infos:
+        raise ValueError("Metadata must contain a non-empty 'tasks' list or a 'task_id'.")
+    print(f"Tasks: {len(task_infos)}")
     
     results = []
     
-    for task_info in metadata['tasks']:
+    for task_info in task_infos:
         task_id = task_info['task_id']
-        hold_us = task_info['hold_us']
+        hold_ns = task_info.get('hold_ns', 0)
+        hold_us = task_info.get('hold_us', hold_ns / 1000.0)
         
         print(f"\n{'='*60}")
         print(f"Retrieving: {hold_us:.1f} μs hold")
@@ -53,7 +67,7 @@ def retrieve_results(metadata_file):
                 print(f"  Unique outcomes: {len(bitstring_counts)}")
                 
                 results.append({
-                    "hold_ns": task_info['hold_ns'],
+                    "hold_ns": hold_ns,
                     "hold_us": hold_us,
                     "status": "completed",
                     "total_shots": total_shots,
@@ -67,7 +81,7 @@ def retrieve_results(metadata_file):
             elif status == "FAILED":
                 print(f"  ✗ FAILED")
                 results.append({
-                    "hold_ns": task_info['hold_ns'],
+                    "hold_ns": hold_ns,
                     "hold_us": hold_us,
                     "status": "failed",
                     "error": str(task.metadata())
@@ -76,7 +90,7 @@ def retrieve_results(metadata_file):
             else:
                 print(f"  ⏳ Still running: {status}")
                 results.append({
-                    "hold_ns": task_info['hold_ns'],
+                    "hold_ns": hold_ns,
                     "hold_us": hold_us,
                     "status": status.lower()
                 })
@@ -84,7 +98,7 @@ def retrieve_results(metadata_file):
         except Exception as e:
             print(f"  ✗ ERROR: {e}")
             results.append({
-                "hold_ns": task_info['hold_ns'],
+                "hold_ns": hold_ns,
                 "hold_us": hold_us,
                 "status": "error",
                 "error": str(e)

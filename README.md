@@ -6,13 +6,14 @@ Hardware experiments run through Amazon Braket on three quantum-computing platfo
 * **Rigetti Ankaa-3** — superconducting processor
 * **IonQ Forte-1** — trapped-ion processor
 
-This repository contains the experiment scripts, retained hardware measurements, analysis code, and validation checks.
+This repository contains the experiment scripts, retained hardware records and
+submission metadata, analysis code, and validation checks.
 
 ## QuEra Aquila
 
 The Aquila study uses programmable neutral-atom arrays with time-dependent Rabi and detuning schedules.
 
-Hardware runs were performed at **4, 8, 12, and 16 atoms** with a **4.5 µm nearest-neighbor blockade geometry**. Additional runs include an independent 4-atom control and 8-atom hold-time experiments at **1 µs and 2 µs**. Each run used **500 shots**.
+Hardware runs were performed at **4, 8, 12, and 16 atoms** with **4.5 µm nearest-neighbor spacing**. Additional runs include an independent 4-atom control and 8-atom hold-time experiments at **1 µs and 2 µs**. Each run used **500 shots**.
 
 The analysis includes Rydberg excitation populations, atom-loading success, multi-excitation probability, and nearest-neighbor correlations.
 
@@ -35,13 +36,18 @@ Hardware results and analysis are in [`aquila/`](https://github.com/rennychung/b
 
 The Ankaa-3 experiments use six-qubit GHZ circuits with programmable delays.
 
-[`ankaa3/`](https://github.com/rennychung/braket-qpu-experiments/blob/main/ankaa3) contains the hardware submission and retrieval scripts, even/odd parity analysis, statistical uncertainty estimates, and normalized-parity and exponential-decay fits.
+[`ankaa3/`](https://github.com/rennychung/braket-qpu-experiments/blob/main/ankaa3) contains the hardware submission and retrieval scripts, even/odd parity analysis, statistical uncertainty estimates, and normalized-parity and exponential-decay fits. The checked-in Ankaa-3 records are submission metadata; completed measurement-count files are not included.
+
+When completed records are supplied, the Ankaa analysis reports 95% Wilson
+intervals for parity, the fitted decay rate with its standard error, and an
+unweighted `R^2` as a descriptive fit-quality statistic. `R^2` is not a
+substitute for the uncertainty interval.
 
 ## IonQ Forte-1
 
 The Forte-1 experiments use four-qubit GHZ and approximate W-state proxy circuits.
 
-[`forte1/`](https://github.com/rennychung/braket-qpu-experiments/blob/main/forte1) contains the hardware script, retained measurements, and parity-visibility analysis.
+[`forte1/`](https://github.com/rennychung/braket-qpu-experiments/blob/main/forte1) contains the hardware script, retained parity summaries, and parity-visibility analysis. The script performs one acquisition per state and does not claim a wait-time sweep.
 
 ## Validation
 
@@ -65,14 +71,26 @@ validation/   Hardware and program-validation checks
 Install the required Python packages with:
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
+```
+
+Use Python 3.10–3.13. The current Amazon Braket SDK dependency is not
+compatible with Python 3.14 because of its Pydantic v1 compatibility layer.
+Run the checks with:
+
+```bash
+python -m pytest
+python aquila/analyze_aquila_results.py
 ```
 
 Submitting new hardware jobs requires Amazon Braket access and locally configured AWS credentials.
 
 ## Notes
 
-The public scripts are cleaned versions of the original experiment files. The experiment definitions, circuits, pulse schedules, geometries, shot counts, measurement processing, and numerical analysis were not changed.
+The public scripts preserve the original experiment definitions, circuits, pulse schedules,
+geometries, shot counts, and retained raw measurements. The publication analysis adds
+explicit conditioning metadata and uncertainty calculations without changing the raw
+hardware records.
 
 Historical internal identifiers remain in archived records where changing them would alter the original provenance. [`CHANGES.md`](https://github.com/rennychung/braket-qpu-experiments/blob/main/CHANGES.md) records the presentation, privacy, and path changes made for the public repository.
 

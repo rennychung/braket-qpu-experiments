@@ -2,6 +2,13 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Runtime outputs that may contain private task identifiers or fresh results.
+ankaa3/outputs/
+aquila/data/aquila_final_*.json
+forte1/data/ionq_forte_test_*.json
+normalized_parity_analysis_*.png
+normalized_parity_analysis_*.json
+
 *.so
 
 .Python

@@ -1,6 +1,12 @@
 """Inspect the OpenQASM operation capabilities reported by Ankaa-3."""
 
-from braket.aws import AwsDevice
+import sys
+
+try:
+    from braket.aws import AwsDevice
+except Exception as exc:
+    print(f"Amazon Braket SDK unavailable in this Python environment: {exc}")
+    sys.exit(2)
 
 DEVICE_ARN = "arn:aws:braket:us-west-1::device/qpu/rigetti/Ankaa-3"
 

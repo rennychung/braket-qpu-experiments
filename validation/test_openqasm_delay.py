@@ -1,7 +1,12 @@
 
 """Run the six-qubit OpenQASM delay program on the local simulator."""
 
-from braket.devices import LocalSimulator
+import pytest
+
+try:
+    from braket.devices import LocalSimulator
+except Exception as exc:  # pragma: no cover - environment compatibility guard
+    pytest.skip(f"Amazon Braket SDK unavailable in this Python environment: {exc}", allow_module_level=True)
 
 qasm_str = """
 OPENQASM 3.0;
@@ -41,11 +46,16 @@ h q[5];
 
 from braket.ir.openqasm import Program as OpenQASMProgram
 
-print("Running the OpenQASM 3.0 delay test on LocalSimulator...")
-device = LocalSimulator()
-try:
-    prog = OpenQASMProgram(source=qasm_str)
-    task = device.run(prog, shots=10)
-    print("Local validation succeeded. Measurement counts:", task.result().measurement_counts)
-except Exception as e:
-    print(f"Local validation failed: {e}")
+
+def test_openqasm_delay_runs():
+    """Compile and execute the delay program on the local simulator."""
+    device = LocalSimulator()
+    program = OpenQASMProgram(source=qasm_str)
+    task = device.run(program, shots=10)
+    counts = task.result().measurement_counts
+    assert sum(counts.values()) == 10
+
+
+if __name__ == "__main__":
+    test_openqasm_delay_runs()
+    print("Local OpenQASM delay validation succeeded.")

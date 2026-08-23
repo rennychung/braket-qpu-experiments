@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -52,9 +53,11 @@ def load_conditioned_rydberg(path, n):
 
     conditioned = []
     for measurement in payload["measurements"]:
+        if measurement.get("shotMetadata", {}).get("shotStatus") != "Success":
+            continue
         pre = measurement["shotResult"]["preSequence"]
         post = measurement["shotResult"]["postSequence"]
-        if sum(pre) == n:
+        if len(pre) == n and len(post) == n and sum(pre) == n:
             conditioned.append(1 - np.asarray(post, dtype=int))
     submitted = int(payload.get("taskMetadata", {}).get("shots", len(payload["measurements"])))
     return np.asarray(conditioned, dtype=int), submitted
@@ -125,6 +128,7 @@ def configure_style():
         "legend.fontsize": 8,
         "lines.linewidth": 1.5,
         "savefig.facecolor": "white",
+        "svg.hashsalt": "aquila-publication",
     })
 
 
@@ -140,18 +144,42 @@ def save_figure(
     fig,
     stem,
     note=("95% CIs: Wilson for P(n=1), normal approximation for means, "
-          "bootstrap for g₂(1). M_valid = shots retained after loading."),
+          "bootstrap for g₂(1). M = shots retained after loading."),
 ):
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     fig.text(0.5, 0.01, note, ha="center", va="bottom", fontsize=7.5, color="#444444")
     fig.tight_layout(rect=(0, 0.06, 1, 1), pad=0.8)
     for extension in ("png", "pdf", "svg"):
-        fig.savefig(
-            FIGURES_DIR / f"{stem}.{extension}",
-            dpi=600 if extension == "png" else None,
-            bbox_inches="tight",
-        )
+        save_kwargs = {"dpi": 600 if extension == "png" else None, "bbox_inches": "tight"}
+        if extension == "pdf":
+            save_kwargs["metadata"] = {
+                "Creator": "Aquila publication figure generator",
+                "Producer": "Matplotlib",
+                "CreationDate": None,
+                "ModDate": None,
+            }
+        output_path = FIGURES_DIR / f"{stem}.{extension}"
+        fig.savefig(output_path, **save_kwargs)
+        if extension == "svg":
+            canonicalize_svg(output_path)
     plt.close(fig)
+
+
+def canonicalize_svg(path):
+    """Remove timestamp/random-ID churn from Matplotlib SVG output."""
+    text = path.read_text(encoding="utf-8")
+    text = re.sub(r"\s*<dc:date>.*?</dc:date>\s*", "\n", text, flags=re.DOTALL)
+    ids = {}
+
+    def replace_id(match):
+        old = match.group(1)
+        new = ids.setdefault(old, f"m{len(ids):08d}")
+        return f'id="{new}"'
+
+    text = re.sub(r'id="(m[0-9a-f]+)"', replace_id, text)
+    for old, new in ids.items():
+        text = text.replace(f"#{old}", f"#{new}")
+    path.write_text(text, encoding="utf-8", newline="\n")
 
 
 def asymmetric_errors(values, intervals):

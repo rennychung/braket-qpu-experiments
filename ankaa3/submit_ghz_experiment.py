@@ -75,13 +75,17 @@ def main():
             "experiment": "rigetti_ghz_hold_time",
             "timestamp": datetime.now().isoformat(),
             "device": DEVICE_ARN,
-            "task_id": task_id,
             "config": {
                 "n_qubits": N_QUBITS,
                 "hold_ns": HOLD_TIME_NS,
                 "shots": SHOTS,
                 "qubit_mapping": QUBITS
             },
+            "tasks": [{
+                "task_id": task_id,
+                "hold_ns": HOLD_TIME_NS,
+                "hold_us": HOLD_TIME_NS / 1000.0,
+            }],
             "status": "submitted"
         }
         
